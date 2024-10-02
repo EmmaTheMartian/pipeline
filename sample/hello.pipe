@@ -1,0 +1,11 @@
+var greet = (person) pure {
+    print("Hello, ");
+    print(person);
+    println("!");
+};
+
+var name = "Emma";
+
+var main = () pure {
+    greet(name);
+};
