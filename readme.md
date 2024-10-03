@@ -8,3 +8,6 @@ a programming language
 - explicit
 
 *impure functions exist and are a keyword away
+
+if you do not know what a "pure function" refers to, check
+[this](https://en.wikipedia.org/wiki/Pure_function) out.

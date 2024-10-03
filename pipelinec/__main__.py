@@ -1,6 +1,6 @@
 import sys
 import random
-from typing import List
+from typing import List, Optional
 import antlr4
 
 from pipelinec.interpreter import FuncValue, Scope, Value
@@ -12,20 +12,16 @@ class Visitor(LanguageListener):
 	scope_stack: List[Scope]
 
 	def __init__(self):
-		self.scope_stack = []
-		self.push_scope()
+		self.scope_stack = [Scope(pure = False)]
 
 	def get_root_scope(self) -> Scope:
 		return self.scope_stack[0]
 
-	def get_top_scope(self) -> Scope:
+	def get_top_scope(self):
 		return self.scope_stack[-1]
 
 	def push_scope(self, is_pure: bool = True) -> Scope:
-		if len(self.scope_stack) == 0:
-			self.scope_stack.append(Scope())
-		else:
-			self.scope_stack.append(self.get_top_scope().make_child_scope(is_pure))
+		self.scope_stack.append(self.get_top_scope().make_child_scope(is_pure))
 		return self.scope_stack[-1]
 
 	def pop_scope(self):

@@ -35,6 +35,15 @@ class LanguageListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by LanguageParser#stat_const.
+    def enterStat_const(self, ctx:LanguageParser.Stat_constContext):
+        pass
+
+    # Exit a parse tree produced by LanguageParser#stat_const.
+    def exitStat_const(self, ctx:LanguageParser.Stat_constContext):
+        pass
+
+
     # Enter a parse tree produced by LanguageParser#stat_assign.
     def enterStat_assign(self, ctx:LanguageParser.Stat_assignContext):
         pass
@@ -62,30 +71,48 @@ class LanguageListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by LanguageParser#func.
-    def enterFunc(self, ctx:LanguageParser.FuncContext):
+    # Enter a parse tree produced by LanguageParser#expr_func.
+    def enterExpr_func(self, ctx:LanguageParser.Expr_funcContext):
         pass
 
-    # Exit a parse tree produced by LanguageParser#func.
-    def exitFunc(self, ctx:LanguageParser.FuncContext):
-        pass
-
-
-    # Enter a parse tree produced by LanguageParser#invoke.
-    def enterInvoke(self, ctx:LanguageParser.InvokeContext):
-        pass
-
-    # Exit a parse tree produced by LanguageParser#invoke.
-    def exitInvoke(self, ctx:LanguageParser.InvokeContext):
+    # Exit a parse tree produced by LanguageParser#expr_func.
+    def exitExpr_func(self, ctx:LanguageParser.Expr_funcContext):
         pass
 
 
-    # Enter a parse tree produced by LanguageParser#block.
-    def enterBlock(self, ctx:LanguageParser.BlockContext):
+    # Enter a parse tree produced by LanguageParser#expr_invoke.
+    def enterExpr_invoke(self, ctx:LanguageParser.Expr_invokeContext):
         pass
 
-    # Exit a parse tree produced by LanguageParser#block.
-    def exitBlock(self, ctx:LanguageParser.BlockContext):
+    # Exit a parse tree produced by LanguageParser#expr_invoke.
+    def exitExpr_invoke(self, ctx:LanguageParser.Expr_invokeContext):
+        pass
+
+
+    # Enter a parse tree produced by LanguageParser#expr_block.
+    def enterExpr_block(self, ctx:LanguageParser.Expr_blockContext):
+        pass
+
+    # Exit a parse tree produced by LanguageParser#expr_block.
+    def exitExpr_block(self, ctx:LanguageParser.Expr_blockContext):
+        pass
+
+
+    # Enter a parse tree produced by LanguageParser#expr_if.
+    def enterExpr_if(self, ctx:LanguageParser.Expr_ifContext):
+        pass
+
+    # Exit a parse tree produced by LanguageParser#expr_if.
+    def exitExpr_if(self, ctx:LanguageParser.Expr_ifContext):
+        pass
+
+
+    # Enter a parse tree produced by LanguageParser#expr_for.
+    def enterExpr_for(self, ctx:LanguageParser.Expr_forContext):
+        pass
+
+    # Exit a parse tree produced by LanguageParser#expr_for.
+    def exitExpr_for(self, ctx:LanguageParser.Expr_forContext):
         pass
 
 

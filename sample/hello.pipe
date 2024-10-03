@@ -1,11 +1,26 @@
-var greet = (person) pure {
+const greet = impure (person) {
     print("Hello, ");
     print(person);
     println("!");
 };
 
-var name = "Emma";
+const doTest = impure () {
+    if (maybe()) {
+        return "true";
+    } else {
+        return "false";
+    };
+    return "fail :(";
+};
 
-var main = () pure {
-    greet(name);
+const name = {
+    if (maybe()) {
+        return "Emma";
+    } else {
+        return "Emmeline";
+    };
+};
+
+const main = impure () {
+    greet(doTest());
 };
