@@ -230,11 +230,11 @@ class Scope:
 		elif expr.OP_INC() is not None: return self.evaluate_expr(expr.getChild(0)).inc()
 		elif expr.OP_DEC() is not None: return self.evaluate_expr(expr.getChild(0)).dec()
 		# Math operators
-		elif expr.ADD() is not None: return self.evaluate_expr(expr.getChild(0)).add(self.evaluate_expr(expr.getChild(1)))
-		elif expr.SUB() is not None: return self.evaluate_expr(expr.getChild(0)).add(self.evaluate_expr(expr.getChild(1)))
-		elif expr.MUL() is not None: return self.evaluate_expr(expr.getChild(0)).add(self.evaluate_expr(expr.getChild(1)))
-		elif expr.DIV() is not None: return self.evaluate_expr(expr.getChild(0)).add(self.evaluate_expr(expr.getChild(1)))
-		elif expr.MOD() is not None: return self.evaluate_expr(expr.getChild(0)).add(self.evaluate_expr(expr.getChild(1)))
+		elif expr.ADD() is not None: return self.evaluate_expr(expr.getChild(0)).add(self.evaluate_expr(expr.getChild(2)))
+		elif expr.SUB() is not None: return self.evaluate_expr(expr.getChild(0)).add(self.evaluate_expr(expr.getChild(2)))
+		elif expr.MUL() is not None: return self.evaluate_expr(expr.getChild(0)).add(self.evaluate_expr(expr.getChild(2)))
+		elif expr.DIV() is not None: return self.evaluate_expr(expr.getChild(0)).add(self.evaluate_expr(expr.getChild(2)))
+		elif expr.MOD() is not None: return self.evaluate_expr(expr.getChild(0)).add(self.evaluate_expr(expr.getChild(2)))
 		# ID
 		elif expr.ID() is not None:
 			return self.get(expr.ID().getText())
