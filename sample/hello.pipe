@@ -1,26 +1,21 @@
-const greet = impure (person) {
-    print("Hello, ");
-    print(person);
-    println("!");
-};
+# var people = list();
 
-const doTest = impure () {
-    if (maybe()) {
-        return "true";
-    } else {
-        return "false";
-    };
-    return "fail :(";
-};
+# const make_person = impure (name what) {
+#     people.append(name);
+#     println("Made a person: " + name + " the " + what + ".");
+#     greet(name);
+# };
 
-const name = {
-    if (maybe()) {
-        return "Emma";
-    } else {
-        return "Emmeline";
-    };
-};
+# const greet = impure (person) {
+#     println("Hello, " + person + "!");
+# };
 
-const main = impure () {
-    greet(doTest());
-};
+# const main = impure () {
+#     make_person("Kali" "Bunny");
+#     make_person("Izzy" "...something");
+#     make_person("Emma" "Avian");
+
+#     println("Made a total of " + str(people.count()) + " people.");
+# };
+
+println("Test" + "Test");

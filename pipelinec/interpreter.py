@@ -1,12 +1,20 @@
-from enum import Enum
-from typing import Any, Callable, Optional
-
+from typing import Any, Callable, Dict, List, Optional
 from antlr4.tree.Tree import TerminalNodeImpl
-
 from pipelinec.syntax.LanguageParser import LanguageParser
 
 
+ESCAPES = {
+	"\\\"": "\"",
+	"\\'": "'",
+	"\\r": "\r",
+	"\\n": "\n",
+	"\\t": "\t",
+	"\\f": "\f",
+}
+
+
 class Value:
+	members: Dict[str, 'Value'] = { }
 	value: Any
 
 	def __init__(self, value: Any):
@@ -17,6 +25,34 @@ class Value:
 
 	def is_truthy(self) -> bool:
 		return self.value is True
+
+	# Operators
+	def add(self, other: 'Value')  -> 'Value': return Value(self.value + other.value)
+	def sub(self, other: 'Value')  -> 'Value': return Value(self.value - other.value)
+	def mul(self, other: 'Value')  -> 'Value': return Value(self.value * other.value)
+	def div(self, other: 'Value')  -> 'Value': return Value(self.value / other.value)
+	def mod(self, other: 'Value')  -> 'Value': return Value(self.value % other.value)
+	def eq(self, other: 'Value')   -> 'Value': return Value(self.value == other.value)
+	def gt(self, other: 'Value')   -> 'Value': return Value(self.value > other.value)
+	def gteq(self, other: 'Value') -> 'Value': return Value(self.value >= other.value)
+	def lt(self, other: 'Value')   -> 'Value': return Value(self.value < other.value)
+	def lteq(self, other: 'Value') -> 'Value': return Value(self.value <= other.value)
+	def is_(self, other: 'Value')  -> 'Value': return Value(other is self)
+	def in_(self, other: 'Value')  -> 'Value': return Value(other.value in self)
+
+	def inc(self) -> 'Value':
+		self.value += 1
+		return self.value
+
+	def dec(self) -> 'Value':
+		self.value -= 1
+		return self.value
+
+	def dot(self, id_: str) -> 'Value':
+		if id_ in self.members:
+			return self.members[id_]
+		raise RuntimeError(f"Unknown variable: {id_}")
+
 
 class FuncValue(Value):
 	args: list[str]
@@ -32,6 +68,34 @@ class FuncValue(Value):
 		for name, value in zip(self.args, args):
 			child_scope.new(name, value)
 		return self.value(child_scope)
+
+
+class TableValue(Value):
+	def __init__(self, value: Dict[str, Value]):
+		self.value = value
+		self.members['get'] = FuncValue(['index'], False, lambda scope: self.get(scope.get('index')))
+		self.members['put'] = FuncValue(['index', 'value'], False, lambda scope: self.put(scope.get('index').value, scope.get('value')))
+
+	def get(self, index: str) -> Value:
+		return self.value[index]
+
+	def put(self, index: str, value: Value):
+		self.value[index] = value
+
+	# def dot(self, id_: str) -> Value:
+	# 	return self.value[id_]
+
+
+class ListValue(Value):
+	def __init__(self, value: List[Value]):
+		self.value = value
+		self.members['append'] = FuncValue(['value'], False, lambda scope: self.value.append(scope.get('value')))
+		self.members['prepend'] = FuncValue(['value'], False, lambda scope: self.value.insert(0, scope.get('value')))
+		self.members['insert'] = FuncValue(['index', 'value'], False, lambda scope: self.value.insert(int(scope.get('index').value), scope.get('value')))
+		self.members['pop'] = FuncValue([], False, lambda scope: self.value.pop())
+		self.members['get'] = FuncValue(['index'], False, lambda scope: self.value[int(scope.get('index').value)])
+		self.members['count'] = FuncValue([], False, lambda scope: Value(len(self.value)))
+		self.members['for_each'] = FuncValue(['callback'], False, lambda scope: ListValue([scope.get('callback').invoke(scope, [it]) for it in self.value]))
 
 
 class Scope:
@@ -76,6 +140,13 @@ class Scope:
 	def make_child_scope(self, is_pure: bool = True) -> 'Scope':
 		return Scope(self, is_pure)
 
+	def format_string(self, string: str) -> str:
+		# Replace escape sequences with the actual characters
+		for escape, value in ESCAPES.items():
+			string = string.replace(escape, value)
+		# todo: string formatting
+		return string
+
 	# Set make_scope to False to force codeblocks to execute without making a new scope.
 	# This is used for `if` and `for` statements
 	def evaluate_expr(self, expr: LanguageParser.ExprContext, make_scope: bool = True) -> Value:
@@ -87,7 +158,7 @@ class Scope:
 		if expr.INT() is not None:
 			return Value(int(expr.INT().getText()))
 		elif expr.STRING() is not None:
-			return Value(expr.STRING().getText()[1:-1])
+			return Value(self.format_string(expr.STRING().getText()[1:-1]))
 		elif expr.TRUE() is not None:
 			return Value(True)
 		elif expr.FALSE() is not None:
@@ -102,17 +173,23 @@ class Scope:
 				args.append(func.getChild(arg_index).getText())
 
 			return FuncValue(args, func.PURE() is not None, lambda scope: scope.evaluate_expr(func_expr))
-		elif expr.expr_invoke() is not None:
-			invoke = expr.expr_invoke()
-			args = []
-			func = self.get(invoke.ID().getText())
+		elif expr.part_invoke() is not None:
+			# Get the function
+			func = self.evaluate_expr(expr.getChild(0))
 			if not isinstance(func, FuncValue):
 				raise RuntimeError("Attempted to invoke a non-FuncValue value (value is: " + str(func) + ")")
+
 			# Check if purity matches
 			if not func.is_pure and self.pure:
-				raise RuntimeError("Cannot invoke impure functions in a pure scope. Impure function was: " + invoke.ID().getText())
-			for argument in range(2, invoke.getChildCount() - 1):
+				raise RuntimeError("Cannot invoke impure functions in a pure scope.")
+
+			# Evaluate arguments
+			invoke = expr.part_invoke()
+			args = []
+			for argument in range(1, invoke.getChildCount() - 1):
 				args.append(self.evaluate_expr(invoke.getChild(argument)))
+
+			# Invoke
 			return func.invoke(self, args)
 		elif expr.expr_block() is not None:
 			block = expr.expr_block()
@@ -121,42 +198,43 @@ class Scope:
 			# If we are pure, there is an extra `pure` keyword denoting that, which must be ignored here.
 			start_index = 2 if is_pure else 1
 
-			print(f'eval\'ing block. make_scope={make_scope} and is_pure={is_pure}')
 			for statement_index in range(start_index, block.getChildCount() - 1):
 				statement = block.getChild(statement_index)
 				if isinstance(statement, TerminalNodeImpl):
 					continue
 				if statement.stat_return() is not None:
-					print(f'found return: {statement.getChild(0).expr().getText()}')
 					return scope.evaluate_expr(statement.getChild(0).expr())
 				scope.evaluate_stat(statement)
-			print('block eval done')
 		elif expr.expr_if() is not None:
 			if_ = expr.expr_if()
 
 			if self.evaluate_expr(if_.getChild(2)).is_truthy():
-				print('eval\'ing `if` expr where cond was true')
 				return self.evaluate_expr(if_.getChild(4), make_scope = False)
 			elif if_.ELSE() is not None:
-				print('eval\'ing `else` expr where cond')
 				return self.evaluate_expr(if_.getChild(6), make_scope = False)
 		elif expr.expr_for() is not None:
 			pass
 		# Operators
-		elif expr.OP_NOT() is not None: pass
-		elif expr.OP_AND() is not None: pass
-		elif expr.OP_OR() is not None: pass
-		elif expr.OP_EQ() is not None: pass
-		elif expr.OP_NEQ() is not None: pass
-		elif expr.OP_GT() is not None: pass
-		elif expr.OP_GTEQ() is not None: pass
-		elif expr.OP_LT() is not None: pass
-		elif expr.OP_LTEQ() is not None: pass
-		elif expr.OP_IS() is not None: pass
-		elif expr.OP_IN() is not None: pass
-		elif expr.OP_DOT() is not None: pass
-		elif expr.OP_INC() is not None: pass
-		elif expr.OP_DEC() is not None: pass
+		elif expr.OP_DOT() is not None: return self.evaluate_expr(expr.getChild(0)).dot(expr.getChild(2).getText())
+		elif expr.OP_NOT() is not None: return Value(not self.evaluate_expr(expr.getChild(2)).value)
+		elif expr.OP_AND() is not None: return Value(self.evaluate_expr(expr.getChild(2)).value and expr.getChild(0).value)
+		elif expr.OP_OR() is not None: return Value(self.evaluate_expr(expr.getChild(2)).value or self.evaluate_expr(expr.getChild(0)))
+		elif expr.OP_EQ() is not None: return self.evaluate_expr(expr.getChild(2)).eq(self.evaluate_expr(expr.getChild(0)))
+		elif expr.OP_NEQ() is not None: return Value(not self.evaluate_expr(expr.getChild(2)).eq(self.evaluate_expr(expr.getChild(0))))
+		elif expr.OP_GT() is not None: return self.evaluate_expr(expr.getChild(2)).gt(self.evaluate_expr(expr.getChild(0)))
+		elif expr.OP_GTEQ() is not None: return self.evaluate_expr(expr.getChild(2)).gteq(self.evaluate_expr(expr.getChild(0)))
+		elif expr.OP_LT() is not None: return self.evaluate_expr(expr.getChild(2)).lt(self.evaluate_expr(expr.getChild(0)))
+		elif expr.OP_LTEQ() is not None: return self.evaluate_expr(expr.getChild(2)).lteq(self.evaluate_expr(expr.getChild(0)))
+		elif expr.OP_IS() is not None: return self.evaluate_expr(expr.getChild(2)).is_(self.evaluate_expr(expr.getChild(0)))
+		elif expr.OP_IN() is not None: return self.evaluate_expr(expr.getChild(2)).in_(self.evaluate_expr(expr.getChild(0)))
+		elif expr.OP_INC() is not None: return self.evaluate_expr(expr.getChild(0)).inc()
+		elif expr.OP_DEC() is not None: return self.evaluate_expr(expr.getChild(0)).dec()
+		# Math operators
+		elif expr.ADD() is not None: return self.evaluate_expr(expr.getChild(0)).add(self.evaluate_expr(expr.getChild(1)))
+		elif expr.SUB() is not None: return self.evaluate_expr(expr.getChild(0)).add(self.evaluate_expr(expr.getChild(1)))
+		elif expr.MUL() is not None: return self.evaluate_expr(expr.getChild(0)).add(self.evaluate_expr(expr.getChild(1)))
+		elif expr.DIV() is not None: return self.evaluate_expr(expr.getChild(0)).add(self.evaluate_expr(expr.getChild(1)))
+		elif expr.MOD() is not None: return self.evaluate_expr(expr.getChild(0)).add(self.evaluate_expr(expr.getChild(1)))
 		# ID
 		elif expr.ID() is not None:
 			return self.get(expr.ID().getText())
@@ -167,7 +245,6 @@ class Scope:
 		# print('evaluating statement: ' + stat.getText())
 		if isinstance(stat, TerminalNodeImpl):
 			return Value(None)
-
 		elif stat.stat_var() is not None:
 			stat_var = stat.stat_var()
 			self.new(stat_var.ID().symbol.text, self.evaluate_expr(stat_var.expr()))

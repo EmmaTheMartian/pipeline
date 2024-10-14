@@ -80,15 +80,6 @@ class LanguageListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by LanguageParser#expr_invoke.
-    def enterExpr_invoke(self, ctx:LanguageParser.Expr_invokeContext):
-        pass
-
-    # Exit a parse tree produced by LanguageParser#expr_invoke.
-    def exitExpr_invoke(self, ctx:LanguageParser.Expr_invokeContext):
-        pass
-
-
     # Enter a parse tree produced by LanguageParser#expr_block.
     def enterExpr_block(self, ctx:LanguageParser.Expr_blockContext):
         pass
@@ -113,6 +104,15 @@ class LanguageListener(ParseTreeListener):
 
     # Exit a parse tree produced by LanguageParser#expr_for.
     def exitExpr_for(self, ctx:LanguageParser.Expr_forContext):
+        pass
+
+
+    # Enter a parse tree produced by LanguageParser#part_invoke.
+    def enterPart_invoke(self, ctx:LanguageParser.Part_invokeContext):
+        pass
+
+    # Exit a parse tree produced by LanguageParser#part_invoke.
+    def exitPart_invoke(self, ctx:LanguageParser.Part_invokeContext):
         pass
 
 

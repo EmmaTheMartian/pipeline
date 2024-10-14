@@ -3,7 +3,7 @@ import random
 from typing import List, Optional
 import antlr4
 
-from pipelinec.interpreter import FuncValue, Scope, Value
+from pipelinec.interpreter import FuncValue, ListValue, Scope, TableValue, Value
 from .syntax.LanguageLexer import LanguageLexer
 from .syntax.LanguageParser import LanguageParser
 from .syntax.LanguageListener import LanguageListener
@@ -40,11 +40,15 @@ def main(argv):
 	builtins = {
 		'print': FuncValue(['text'], False, lambda scope: print(scope.get('text').value, end='')),
 		'println': FuncValue(['text'], False, lambda scope: print(scope.get('text').value)),
-		'debug': FuncValue(['text'], False, lambda scope: print(scope.scope)),
+		'debug': FuncValue([], False, lambda scope: print(scope.scope)),
 		'maybe': FuncValue([], False, lambda scope: Value(random.choice([True, False]))),
-		'when': FuncValue(['cond', 'a', 'b'], True, lambda scope: scope.get('a') if scope.get('cond').value else scope.get('b')),
-		'areEqual': FuncValue(['a', 'b'], True, lambda scope: Value(True if scope.get('a').value == scope.get('b').value else False)),
-		'not': FuncValue(['a'], True, lambda scope: Value(not scope.get('a').value)),
+		'str': FuncValue(['something'], True, lambda scope: Value(str(scope.get('something').value))),
+		'table': FuncValue([], True, lambda scope: TableValue({})),
+		'list': FuncValue([], True, lambda scope: ListValue([])),
+		'split': FuncValue(['text', 'splitter'], True, lambda scope: ListValue([
+			Value(it) for it in
+			scope.get('text').value.split(scope.get('splitter').value)
+		])),
 	}
 
 	for name, value in builtins.items():
