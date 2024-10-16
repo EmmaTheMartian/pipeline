@@ -1,0 +1,7 @@
+const module = table();
+
+module.put("load", pure (file) {
+	return py_eval("exec('from ctypes import cdll') or cdll.LoadLibrary('" + file + "')");
+});
+
+return module;

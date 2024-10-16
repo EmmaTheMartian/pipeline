@@ -1,21 +1,12 @@
-# var people = list();
+const io = import("pipelib/io.pipe");
 
-# const make_person = impure (name what) {
-#     people.append(name);
-#     println("Made a person: " + name + " the " + what + ".");
-#     greet(name);
-# };
+const li = list();
+li.append("Hello, ");
+li.append("World! ");
+li.append("-From ");
+li.append("Pipeline :D");
 
-# const greet = impure (person) {
-#     println("Hello, " + person + "!");
-# };
-
-# const main = impure () {
-#     make_person("Kali" "Bunny");
-#     make_person("Izzy" "...something");
-#     make_person("Emma" "Avian");
-
-#     println("Made a total of " + str(people.count()) + " people.");
-# };
-
-println("Test" + "Test");
+li.for_each(impure (it) {
+	io.print(it);
+});
+io.println("");

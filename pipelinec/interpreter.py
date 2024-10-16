@@ -14,17 +14,21 @@ ESCAPES = {
 
 
 class Value:
-	members: Dict[str, 'Value'] = { }
+	members: Dict[str, 'Value']
 	value: Any
 
 	def __init__(self, value: Any):
 		self.value = value
+		self.members = { }
 
 	def evaluate(self) -> 'Value':
 		return Value(self.value)
 
 	def is_truthy(self) -> bool:
 		return self.value is True
+
+	def get_native(self, scope: 'Scope'):
+		return self.value.__dict__[scope.get('name').value]
 
 	# Operators
 	def add(self, other: 'Value')  -> 'Value': return Value(self.value + other.value)
@@ -54,6 +58,16 @@ class Value:
 		raise RuntimeError(f"Unknown variable: {id_}")
 
 
+class NativeValue(Value):
+	def __init__(self, value: Any):
+		super().__init__(value)
+
+	def dot(self, id_: str) -> 'NativeValue':
+		if id_ in self.__dict__:
+			return self.__dict__[id_]
+		raise RuntimeError(f"Unknown native variable: {id_}")
+
+
 class FuncValue(Value):
 	args: list[str]
 	is_pure: bool
@@ -71,10 +85,14 @@ class FuncValue(Value):
 
 
 class TableValue(Value):
-	def __init__(self, value: Dict[str, Value]):
-		self.value = value
-		self.members['get'] = FuncValue(['index'], False, lambda scope: self.get(scope.get('index')))
-		self.members['put'] = FuncValue(['index', 'value'], False, lambda scope: self.put(scope.get('index').value, scope.get('value')))
+	def __init__(self, value: Optional[Dict[str, Value]] = None):
+		super().__init__(value or {})
+		self.members['get'] = FuncValue(['index'], True, lambda scope: self.get(scope.get('index').value))
+		self.members['put'] = FuncValue(['index', 'value'], True, lambda scope: self.put(scope.get('index').value, scope.get('value')))
+		def _put_ip(scope: Scope) -> TableValue:
+			self.put(scope.get('index').value, scope.get('value'))
+			return self
+		self.members['put_ip'] = FuncValue(['index', 'value'], True, _put_ip)
 
 	def get(self, index: str) -> Value:
 		return self.value[index]
@@ -82,31 +100,39 @@ class TableValue(Value):
 	def put(self, index: str, value: Value):
 		self.value[index] = value
 
-	# def dot(self, id_: str) -> Value:
-	# 	return self.value[id_]
+	def dot(self, id_: str) -> Value:
+		if id_ in self.value:
+			return self.value[id_]
+		return super().dot(id_)
 
 
 class ListValue(Value):
-	def __init__(self, value: List[Value]):
-		self.value = value
-		self.members['append'] = FuncValue(['value'], False, lambda scope: self.value.append(scope.get('value')))
-		self.members['prepend'] = FuncValue(['value'], False, lambda scope: self.value.insert(0, scope.get('value')))
-		self.members['insert'] = FuncValue(['index', 'value'], False, lambda scope: self.value.insert(int(scope.get('index').value), scope.get('value')))
-		self.members['pop'] = FuncValue([], False, lambda scope: self.value.pop())
-		self.members['get'] = FuncValue(['index'], False, lambda scope: self.value[int(scope.get('index').value)])
-		self.members['count'] = FuncValue([], False, lambda scope: Value(len(self.value)))
+	def __init__(self, value: Optional[List[Value]] = None):
+		super().__init__(value or [])
+		self.members['append'] = FuncValue(['value'], True, lambda scope: self.value.append(scope.get('value')))
+		self.members['prepend'] = FuncValue(['value'], True, lambda scope: self.value.insert(0, scope.get('value')))
+		self.members['insert'] = FuncValue(['index', 'value'], True, lambda scope: self.value.insert(int(scope.get('index').value), scope.get('value')))
+		self.members['pop'] = FuncValue([], True, lambda scope: Value(self.value.pop()))
+		self.members['get'] = FuncValue(['index'], True, lambda scope: Value(self.value[int(scope.get('index').value)]))
+		self.members['count'] = FuncValue([], True, lambda scope: Value(len(self.value)))
 		self.members['for_each'] = FuncValue(['callback'], False, lambda scope: ListValue([scope.get('callback').invoke(scope, [it]) for it in self.value]))
+		def _append_ip(scope):
+			self.value.append(scope.get('value').value)
+			return self
+		self.members['append_ip'] = FuncValue(['value'], True, _append_ip)
 
 
 class Scope:
 	parent: Optional['Scope']
 	scope: dict[str, Value]
 	pure: bool
+	returned_value: Value
 
 	def __init__(self, parent: Optional['Scope'] = None, pure: bool = True):
 		self.parent = parent
 		self.scope = {}
 		self.pure = pure
+		self.returned_value = Value(None)
 		# Set this to false to make this scope unable to get variables from outside of its scope
 		self.allow_impure_get = True
 
@@ -170,7 +196,10 @@ class Scope:
 
 			args = []
 			for arg_index in range(2, func.getChildCount() - 2):
-				args.append(func.getChild(arg_index).getText())
+				argument = func.getChild(arg_index)
+				if isinstance(argument, TerminalNodeImpl) and argument.getText() == ',':
+					continue
+				args.append(argument.getText())
 
 			return FuncValue(args, func.PURE() is not None, lambda scope: scope.evaluate_expr(func_expr))
 		elif expr.part_invoke() is not None:
@@ -186,8 +215,11 @@ class Scope:
 			# Evaluate arguments
 			invoke = expr.part_invoke()
 			args = []
-			for argument in range(1, invoke.getChildCount() - 1):
-				args.append(self.evaluate_expr(invoke.getChild(argument)))
+			for arg_index in range(1, invoke.getChildCount() - 1):
+				argument = invoke.getChild(arg_index)
+				if isinstance(argument, TerminalNodeImpl) and argument.getText() == ',':
+					continue
+				args.append(self.evaluate_expr(argument))
 
 			# Invoke
 			return func.invoke(self, args)
@@ -257,7 +289,8 @@ class Scope:
 		elif stat.expr() is not None:
 			return self.evaluate_expr(stat.expr())
 		elif stat.stat_return() is not None:
-			return self.evaluate_expr(stat.stat_return().expr())
+			self.returned_value = self.evaluate_expr(stat.stat_return().expr())
+			return self.returned_value
 		return Value(None)
 
 	def __enter__(self):

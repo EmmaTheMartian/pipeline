@@ -48,8 +48,8 @@ WS: [ \t\n\r\f]+ -> skip;
 COMMENT: '#' ~[\r\n]* -> skip;
 MULTILINE_COMMENT: '#' '{' .*? '#' '}' -> skip;
 // https://stackoverflow.com/a/24559773
-UNTERMINATED_SRTING: '"' (~["\\] | '\\' ( . | EOF))*;
-STRING: UNTERMINATED_SRTING '"';
+UNTERMINATED_STRING: '"' (~["\\] | '\\' ( . | EOF))*;
+STRING: UNTERMINATED_STRING '"';
 
 // Grammar
 program: (stat ';')* EOF;
@@ -102,11 +102,11 @@ expr:
     | ID
     ;
 
-expr_func: ('impure'|'pure') '(' ID* ')' stat;
+expr_func: ('impure'|'pure') '(' (ID ','?)* ')' stat;
 expr_block: 'pure'? '{' (stat ';')* '}';
 expr_if: 'if' '(' expr ')' expr ('else' expr)?;
 expr_for: 'for' '(' expr ';' expr ';' expr ')' stat;
 
 // "Parts"
 // Allow me to break things up into smaller parts for ease-of-use
-part_invoke: '(' expr* ')';
+part_invoke: '(' (expr ','?)* ')';

@@ -1,0 +1,10 @@
+const c = import("pipelib/c.pipe");
+const cio = c.load("pipelib/c/io.so");
+
+const module = table();
+
+module.put("print", wrap_func(get_native(cio, "print"), false, table().put_ip("text", "c_char_p")));
+
+module.put("println", wrap_func(get_native(cio, "println"), false, table().put_ip("text", "c_char_p")));
+
+return module;

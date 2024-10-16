@@ -154,7 +154,7 @@ class LanguageLexer(Lexer):
     WS = 40
     COMMENT = 41
     MULTILINE_COMMENT = 42
-    UNTERMINATED_SRTING = 43
+    UNTERMINATED_STRING = 43
     STRING = 44
 
     channelNames = [ u"DEFAULT_TOKEN_CHANNEL", u"HIDDEN" ]
@@ -174,7 +174,7 @@ class LanguageLexer(Lexer):
             "OP_GTEQ", "OP_LT", "OP_LTEQ", "OP_IS", "OP_IN", "OP_INC", "OP_DEC", 
             "ADD", "SUB", "MUL", "DIV", "MOD", "VAR", "CONST", "RETURN", 
             "FUN", "IMPURE", "PURE", "TRUE", "FALSE", "IF", "ELSE", "FOR", 
-            "INT", "ID", "WS", "COMMENT", "MULTILINE_COMMENT", "UNTERMINATED_SRTING", 
+            "INT", "ID", "WS", "COMMENT", "MULTILINE_COMMENT", "UNTERMINATED_STRING", 
             "STRING" ]
 
     ruleNames = [ "EQ", "COMMA", "SEMI", "LPAREN", "RPAREN", "LCURLY", "RCURLY", 
@@ -183,7 +183,7 @@ class LanguageLexer(Lexer):
                   "OP_INC", "OP_DEC", "ADD", "SUB", "MUL", "DIV", "MOD", 
                   "VAR", "CONST", "RETURN", "FUN", "IMPURE", "PURE", "TRUE", 
                   "FALSE", "IF", "ELSE", "FOR", "INT", "ID", "WS", "COMMENT", 
-                  "MULTILINE_COMMENT", "UNTERMINATED_SRTING", "STRING" ]
+                  "MULTILINE_COMMENT", "UNTERMINATED_STRING", "STRING" ]
 
     grammarFileName = "Language.g4"
 
