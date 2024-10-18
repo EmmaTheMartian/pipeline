@@ -1,9 +1,20 @@
+# Python things (these will be removed when the prototype's code is removed)
 /env
-
 **/__pycache__
 /pipelinec/syntax/.antlr
 
-/clockwork
-/v
-
+# Built files
+/build/
 *.so
+
+# Generated Antlr code
+/src/generated/
+
+# Antlr jar
+/antlr-*.jar
+
+# Caches
+/.xmake/
+/compile_commands.json
+/.cache
+.DS_Store

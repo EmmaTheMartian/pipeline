@@ -1,0 +1,3 @@
+tasks:
+  - name: "Setup Xmake"
+    command: curl -fsSL https://xmake.io/shget.text | bash

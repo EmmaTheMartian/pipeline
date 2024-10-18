@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional
 from antlr4.tree.Tree import TerminalNodeImpl
-from pipelinec.syntax.LanguageParser import LanguageParser
+from prototype.syntax.LanguageParser import LanguageParser
 
 
 ESCAPES = {

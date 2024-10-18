@@ -4,7 +4,7 @@ import ctypes
 from typing import List
 import antlr4
 
-from pipelinec.interpreter import FuncValue, ListValue, NativeValue, Scope, TableValue, Value
+from prototype.interpreter import FuncValue, ListValue, NativeValue, Scope, TableValue, Value
 from .syntax.LanguageLexer import LanguageLexer
 from .syntax.LanguageParser import LanguageParser
 from .syntax.LanguageListener import LanguageListener

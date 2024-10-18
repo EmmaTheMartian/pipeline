@@ -1,7 +1,0 @@
-task:pipelib.build = {
-	run = 'cd pipelib/c && python3 build.py'
-}
-
-task:pipelib.build.prod = {
-	run = 'cd pipelib/c && python3 build.py -prod'
-}
